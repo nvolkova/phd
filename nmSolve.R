@@ -58,3 +58,26 @@ nmFit <- function(D, E, maxIter = 10000, tol=1e-5, div.err=1e-7) {
   P2
 }
 
+ssnmf <- function(D, S, s=0, maxIter=100, minE = 0, whichS = 1:ncol(D)){
+    n <- nrow(D)
+    o <- ncol(S)
+    m <- ncol(D)
+    P <- cbind(S, if(s>0) matrix(runif(n*s,0,1), ncol=s) else NULL)
+    P <- P/rep(colSums(P), each=nrow(P))
+    colnames(P) <- c(colnames(S), if(s >0) paste0("N.",1:s) else NULL)
+    E <- matrix(runif((s+o)*m, 0,1), ncol=m)
+    E <- E * (t(P)%*% (D / (P %*% E))) / rep(colSums(P), m)
+    
+    iter <- 1
+    while(iter < maxIter){
+        P <- P * ((D / (P %*% E)) %*% t(E)) / rep(rowSums(E), each=n)
+        P[,1:o] <- S
+        P <- P/rep(colSums(P), each=nrow(P))
+        E <- E * (t(P)%*% (D / (P %*% E))) / rep(colSums(P), m)
+        E[E/rep(colSums(E), each=nrow(E)) < minE] <- 0
+        E[-(1:o),setdiff(1:ncol(E), whichS)] <- 0
+        E <- E * rep(colSums(D)/colSums(E), each=nrow(E))
+        iter <- iter + 1
+    }
+    list(E=E,P=P)
+}
