@@ -37,3 +37,7 @@ combination_check <- function(x,y) {
   }
   return(optim(par = rep(1,ncol(x)), objective, lower=rep(0,ncol(x))))
 }
+
+divergence <- function (a,b) {
+  return (a * log ( (a+.Machine$double.eps)/(b + .Machine$double.eps)) - a + b)
+}
