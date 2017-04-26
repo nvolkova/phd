@@ -30,3 +30,10 @@ read_ce_vcf <- function(file) {
   )    
   return(out)
 }
+
+combination_check <- function(x,y) {
+  objective <- function(l) {
+    return(-as.numeric(cosine(y,x %*% t(t(l)))))
+  }
+  return(optim(par = rep(1,ncol(x)), objective, lower=rep(0,ncol(x))))
+}
