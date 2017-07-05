@@ -96,7 +96,7 @@ plot_profiles <- function (mut_matrix, colors)
   return(plot)
 }
 
-plot_sig_104 <- function(mut_matrix) {
+plot_sig_104 <- function(mut_matrix,size=8,ymax=0.2) {
   
   C_TRIPLETS = c(
     "ACA", "ACC", "ACG", "ACT",
@@ -118,20 +118,76 @@ plot_sig_104 <- function(mut_matrix) {
   substring(df$Base[nchar(df$Base)>1], 2, 2) = "*"
   #colnames(df)[1:ncol(mut_matrix)] = paste0("Signature.",c(1:ncol(mut_matrix)),sep="")
   df2 = melt(df,id.vars = c("Type","Base"))
+  df2$Type_f = factor(df2$Type, levels=c("C>A","C>G","C>T","T>A","T>C","T>G","DEL","INS"))
   plot = ggplot(data = df2, aes(x = Base, y = value, fill = Type, width = 0.6)) +
     geom_bar(stat = "identity", colour = "black",size = 0.2) +
     scale_fill_manual(values = c("#2EBAED", "#000000", "#DE1C14","orange","purple","#D4D2D2", "#ADCC54", "#F0D0CE")) + 
-    facet_grid(variable ~ Type,scales = "free_x") +
-    ylab("Relative contribution") + coord_cartesian(ylim = c(0,0.15)) + 
+    facet_grid(variable ~ Type_f,scales = "free_x") +
+    ylab("Relative contribution") + coord_cartesian(ylim = c(0,ymax)) + 
     guides(fill = FALSE) + theme_bw() +
     theme(axis.title.y = element_text(size = 14,vjust = 1), axis.text.y = element_text(size = 6), axis.title.x = element_text(size = 14), 
           axis.text.x = element_text(size = 6, angle = 90, vjust = 0.4), 
-          strip.text.x = element_text(size = 6), strip.text.y = element_text(size = 6), 
+          strip.text.x = element_text(size = 10), strip.text.y = element_text(size = size), 
           panel.grid.major.x = element_blank())
   return(plot)
 }
 
-plot_profiles_104 <- function (mut_matrix, colors, boxplot=F, normalize=F) 
+plot_sig_104_CI <- function(mut_matrix,mut_matrix_lower,mut_matrix_upper,size=8,ymax=0.2,colors) {
+  
+  colors = c("#2EBAED", "#000000", "#DE1C14","orange","purple","#D4D2D2", "#ADCC54", "#F0D0CE")
+  
+  
+  C_TRIPLETS = c(
+    "ACA", "ACC", "ACG", "ACT",
+    "CCA", "CCC", "CCG", "CCT",
+    "GCA", "GCC", "GCG", "GCT",
+    "TCA", "TCC", "TCG", "TCT")
+  
+  T_TRIPLETS = c(
+    "ATA", "ATC", "ATG", "ATT",
+    "CTA", "CTC", "CTG", "CTT",
+    "GTA", "GTC", "GTG", "GTT",
+    "TTA", "TTC", "TTG", "TTT")
+  
+  types <- c(rep(C_TRIPLETS,3), rep(T_TRIPLETS,3))
+  df = as.data.frame(mut_matrix)
+  df$Type = c(rep(c("C>A","C>G","C>T","T>A","T>C","T>G"),each=16),rep("INS",4),rep("DEL",4))
+  df$Base = c(types,rep(c("A","C","G","T"),2))
+  substring(df$Base[nchar(df$Base)>1], 2, 2) = "*"
+  df2 = melt(df,id.vars = c("Type","Base"))
+  df2$Type_f = factor(df2$Type, levels=c("C>A","C>G","C>T","T>A","T>C","T>G","DEL","INS"))
+  plot = ggplot(data = df2, aes(x = Base, y = value, fill = Type, width = 0.6)) +
+    geom_bar(stat = "identity", colour = "black",size = 0.2) +
+    scale_fill_manual(values = colors) + 
+    facet_grid(variable ~ Type_f,scales = "free_x") +
+    ylab("Relative contribution") + coord_cartesian(ylim = c(0,ymax)) + 
+    guides(fill = FALSE) + theme_bw() +
+    theme(axis.title.y = element_text(size = 14,vjust = 1), axis.text.y = element_text(size = 6), axis.title.x = element_text(size = 14), 
+          axis.text.x = element_text(size = 6, angle = 90, vjust = 0.4), 
+          strip.text.x = element_text(size = 10), strip.text.y = element_text(size = size), 
+          panel.grid.major.x = element_blank())
+  
+  mut_matrix_lower <- mut_matrix_lower[row.names(mut_matrix),]
+  mut_matrix_upper <- mut_matrix_upper[row.names(mut_matrix),]
+  rownames(mut_matrix_lower) = rownames(mut_matrix_upper) = NULL
+  df_lower = as.data.frame(mut_matrix_lower)
+  df_upper = as.data.frame(mut_matrix_upper)
+  df_lower$Type = c(rep(c("C>A","C>G","C>T","T>A","T>C","T>G"),each=16),rep("INS",4),rep("DEL",4))
+  df_lower$Base = c(types,rep(c("A","C","G","T"),2))
+  df_upper$Type = c(rep(c("C>A","C>G","C>T","T>A","T>C","T>G"),each=16),rep("INS",4),rep("DEL",4))
+  df_upper$Base = c(types,rep(c("A","C","G","T"),2))
+  df_lower = melt(df_lower, id.vars = c("Type","Base"))
+  df_upper = melt(df_upper, id.vars = c("Type","Base"))
+  df3 <- cbind(df2, value_min = df_lower$value, value_max = df_upper$value)
+  df3$Type_f = factor(df3$Type, levels=c("C>A","C>G","C>T","T>A","T>C","T>G","DEL","INS"))
+  plot2 = plot + geom_pointrange(data=df3, aes(ymin=value,ymax=value_max,colour=factor(Type)), fatten = 0.01, size=0.5, show.legend = F, colour="white") +
+    scale_color_manual(values=colors) +
+    geom_pointrange(data=df3, aes(ymin=value_min,ymax=value), size=0.5, fatten = 0.01,show.legend = F, colour="white")
+  
+  return(plot2)
+}
+
+plot_profiles_104 <- function (mut_matrix, colors, boxplot=F, normalize=F, size=6) 
 {
   C_TRIPLETS = c(
     "ACA", "ACC", "ACG", "ACT",
@@ -154,22 +210,23 @@ plot_profiles_104 <- function (mut_matrix, colors, boxplot=F, normalize=F)
   df$Base = c(types,rep(c("A","C","G","T"),2))
   substring(df$Base[nchar(df$Base)>1], 2, 2) = "*"
   df2 = melt(df,id.vars = c("Type","Base"))
+  df2$Type_f = factor(df2$Type, levels=c("C>A","C>G","C>T","T>A","T>C","T>G","DEL","INS"))
   if (boxplot) {
     plot = ggplot(data = df2, aes(x = Base, y = value, fill=Type)) +
       geom_boxplot() +
       scale_fill_manual(values = c("#2EBAED", "#000000", "#DE1C14","orange","purple","#D4D2D2", "#ADCC54", "#F0D0CE")) + 
-      facet_grid(. ~ Type, scales="free") +
+      facet_grid(. ~ Type_f, scales="free") +
       ylab("Mutation counts") + 
       guides(fill = FALSE) + theme_bw() +
-      theme(axis.title.y = element_text(size = 14,vjust = 1), axis.text.y = element_text(size = 6), axis.title.x = element_text(size = 14), 
-            axis.text.x = element_text(size = 6, angle = 90, vjust = 0.4), 
-            strip.text.x = element_text(size = 6), strip.text.y = element_text(size = 6), 
+      theme(axis.title.y = element_text(size = 20,vjust = 1), axis.text.y = element_text(size = 16), axis.title.x = element_text(size = 20), 
+            axis.text.x = element_text(size = 8, angle = 90, vjust = 0.4), 
+            strip.text.x = element_text(size = size), strip.text.y = element_text(size = size), 
             panel.grid.major.x = element_blank())
   } else {
     plot = ggplot(data = df2, aes(x = Base, y = value, fill = Type, width = 0.6)) +
       geom_bar(stat = "identity", colour = "black",size = 0.2) +
       scale_fill_manual(values = c("#2EBAED", "#000000", "#DE1C14","orange","purple","#D4D2D2", "#ADCC54", "#F0D0CE")) + 
-      facet_grid(variable ~ Type,scales = "free_x") +
+      facet_grid(variable ~ Type_f,scales = "free_x") +
       ylab("Mutation counts") + coord_cartesian(ylim = c(0,max(mut_matrix))) + 
       guides(fill = FALSE) + theme_bw() +
       theme(axis.title.y = element_text(size = 14,vjust = 1), axis.text.y = element_text(size = 6), axis.title.x = element_text(size = 14), 
@@ -182,7 +239,7 @@ plot_profiles_104 <- function (mut_matrix, colors, boxplot=F, normalize=F)
 
 plot_104_profile_CI <- function (mut_matrix, mut_matrix_lower = NULL, 
                                 mut_matrix_upper = NULL,  
-                                colors=c("deepskyblue2","black","red3","orange","purple","grey","olivedrab3","pink")) 
+                                colors=c("deepskyblue2","black","red3","orange","purple","grey","olivedrab3","pink"),size=6,ymax=0.25) 
 {
   C_TRIPLETS = c(
     "ACA", "ACC", "ACG", "ACT",
@@ -205,15 +262,16 @@ plot_104_profile_CI <- function (mut_matrix, mut_matrix_lower = NULL,
   df$Type = c(rep(c("C>A","C>G","C>T","T>A","T>C","T>G"),each=16),rep("INS",4),rep("DEL",4))
   df$Base = c(types,rep(c("A","C","G","T"),2))
   df2 = melt(df,id.vars = c("Type","Base"))
+  df2$Type_f = factor(df2$Type, levels=c("C>A","C>G","C>T","T>A","T>C","T>G","DEL","INS"))
   plot = ggplot(data = df2, aes(x = Base, y = value, fill = Type, width = 0.6)) +
     geom_bar(stat = "identity", colour = "black",size = 0.2) +
-    scale_fill_manual(values = c("#2EBAED", "#000000", "#DE1C14","orange","purple","#D4D2D2", "#ADCC54", "#F0D0CE")) + 
-    facet_grid(variable ~ Type,scales = "free_x") +
-    ylab("Mutation counts") + coord_cartesian(ylim = c(0,0.2)) + 
+    scale_fill_manual(values = colors) + 
+    facet_grid(variable ~ Type_f,scales = "free_x") +
+    ylab("Mutation counts") + coord_cartesian(ylim = c(0,ymax)) + 
     guides(fill = FALSE) + theme_bw() +
-    theme(axis.title.y = element_text(size = 14,vjust = 1), axis.text.y = element_text(size = 6), axis.title.x = element_text(size = 14), 
-          axis.text.x = element_text(size = 6, angle = 90, vjust = 0.4), 
-          strip.text.x = element_text(size = 6), strip.text.y = element_text(size = 6), 
+    theme(axis.title.y = element_text(size = 16,vjust = 1), axis.text.y = element_text(size = size), axis.title.x = element_text(size = 16), 
+          axis.text.x = element_text(size = size, angle = 90, vjust = 0.4), 
+          strip.text.x = element_text(size = size), strip.text.y = element_text(size = size), 
           panel.grid.major.x = element_blank())
   
     mut_matrix_lower <- mut_matrix_lower[row.names(mut_matrix),]
@@ -234,7 +292,7 @@ plot_104_profile_CI <- function (mut_matrix, mut_matrix_lower = NULL,
     df_lower = melt(df_lower, id.vars = c("Type","Base"))
     df_upper = melt(df_upper, id.vars = c("Type","Base"))
     df3 <- cbind(df2, value_min = df_lower$value, value_max = df_upper$value)
-    plot2 = plot + geom_pointrange(data=df3, aes(ymin=value,ymax=value_max,colour = Type), fatten = 0.01, size=1, show.legend = F) +
+    plot2 = plot + geom_pointrange(data=df3, aes(ymin=value,ymax=value_max,colour = Type_f), fatten = 0.01, size=1, show.legend = F) +
       scale_color_manual(values=c(colors,"white")) +
       geom_pointrange(data=df3, aes(ymin=value_min,ymax=value,colour="white"), size=1, fatten = 0.01,show.legend = F)
   

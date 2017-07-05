@@ -1,7 +1,7 @@
-plot_decomposition <- function(decomposition, mm, intnames, col) {
+plot_decomposition <- function(decomposition, mm, intnames, col,circle=F,size=6,axis.size=10) {
   for (i in 1:nrow(decomposition))
     decomposition[i,] = decomposition[i,] / sum(decomposition[i,])
-  new.cont.mat <- t(decomposition[intersect(intnames,rownames(mm)),])
+  new.cont.mat <- t(decomposition[intnames,])
   for (y in colnames(new.cont.mat)) {
     new.cont.mat[,y] = new.cont.mat[,y] * rowSums(mm)[y]
   }
@@ -17,7 +17,29 @@ plot_decomposition <- function(decomposition, mm, intnames, col) {
     scale_fill_manual(name="",values=col) + 
     theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank()) + 
     theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank()) +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1,size=6))
+    theme(axis.text.x = element_text(angle = 90, hjust = 1,size=size),
+          axis.text.y = element_text(size=axis.size),
+          legend.text=element_text(size=axis.size))
+  if (circle) {
+    new.cont.mat <- t(decomposition[intnames,])
+    for (y in colnames(new.cont.mat)) {
+      new.cont.mat[,y] = new.cont.mat[,y] * log10(rowSums(mm)[y])
+    }
+    m.new.cont.mat <- melt(new.cont.mat)
+    colnames(m.new.cont.mat) = c("Signature","Sample","Contribution")
+    plot = ggplot(m.new.cont.mat, aes(x = factor(Sample,levels=names(sampleorder)), 
+                                                y = Contribution, fill = factor(Signature,levels=colnames(decomposition)), order = Sample)) + 
+    geom_bar(stat = "identity", colour = "black") + 
+    theme_bw() + 
+    scale_fill_manual(name="",values=col) + 
+    theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank()) + 
+    theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank()) +
+    theme(axis.text.x = element_text(size=size),
+          axis.text.y = element_text(size=axis.size),
+          legend.text=element_text(size=axis.size)) + 
+    coord_polar() + 
+    labs(x = "", y = "Absolute contribution \n (no. mutations, log10)")
+  }
   plot
 }
 

@@ -1,6 +1,6 @@
 plot_96_profile_CI <- function (types,mut_matrix, mut_matrix_lower = NULL, 
                                 mut_matrix_upper = NULL, CI=FALSE, 
-                                colors=c("deepskyblue2","black","red3","grey","olivedrab3","pink"), ymax = 0.2) 
+                                colors=c("deepskyblue2","black","red3","grey","olivedrab3","pink"), ymax = 0.2, size=9) 
 {
   norm_mut_matrix = mut_matrix
   mult <- colSums(norm_mut_matrix)
@@ -19,11 +19,12 @@ plot_96_profile_CI <- function (types,mut_matrix, mut_matrix_lower = NULL,
          facet_grid(variable ~ substitution) + 
          coord_cartesian(ylim = c(0,ymax)) + 
          scale_y_continuous(breaks = seq(0, ymax, 0.1)) +
-         guides(fill = FALSE) + theme_bw() + theme(axis.title.y = element_text(size = 12, vjust = 1), 
-                                                   axis.text.y = element_text(size = 8), axis.title.x = element_text(size = 12), 
-                                                   axis.text.x = element_text(size = 5, angle = 90, vjust = 0.4), 
-                                                   strip.text.x = element_text(size = 9), strip.text.y = element_text(size = 9), 
-                                                   panel.grid.major.x = element_blank())
+         guides(fill = FALSE) + theme_bw() + theme(axis.title.y = element_text(size = 16, vjust = 1), axis.title.x = element_text(size = 16),
+                                                   axis.text.y = element_text(size = size), 
+                                                   axis.text.x = element_text(size = size, angle = 90, vjust = 0.4), 
+                                                   strip.text.x = element_text(size = size), strip.text.y = element_text(size = size), 
+                                                   panel.grid.major.x = element_blank()) +
+         labs(y="Relative contribution", x="Context")
   
   if (CI) { # add confidence intervals
     mut_matrix_lower <- mut_matrix_lower[row.names(mut_matrix),]
