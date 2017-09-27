@@ -5,7 +5,7 @@ top <- function(x,n) {
 }
 
 cosine <- function(x,y) {
-  sum(x * y) / sqrt(sum(x**2)) / sqrt(sum(y**2))
+    return(sum(x * y) / sqrt(sum(x**2)) / sqrt(sum(y**2)))
 }
 
 read_ce_vcf <- function(file) {
