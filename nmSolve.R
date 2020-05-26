@@ -1,3 +1,9 @@
+#########################################################################
+### Functions for NMF: extracting signatures, contributions,
+### extracting new signatures simultaneously, Qoasi-Poisson models
+### M. Gerstung, N. Volkova, EMBL-EBI 2016-2017
+#########################################################################
+
 nmSolve <- function(D, P, maxIter = 10000, tol=1e-5, div.err=1e-7) {
   n <- nrow(D)
   mask <- !is.na(D)
